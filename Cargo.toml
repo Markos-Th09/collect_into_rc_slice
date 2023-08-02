@@ -1,0 +1,12 @@
+[package]
+name = "collect_into_rc_slice"
+version = "1.0.0"
+authors = ["MarkosTh09"]
+repository = "https://github.com/Markos-Th09/collect_into_rc_slice"
+license = "MIT"
+description = "A crate that let's you collect an `Iterator<Item=T>` into an `Rc<[T]>` without needing to make 2 heap allocations."
+edition = "2021"
+
+[features]
+default = ["std"]
+std = []
