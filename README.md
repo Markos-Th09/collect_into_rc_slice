@@ -1,5 +1,5 @@
 # collect_into_rc_slice
-A crate that let's you collect an `Iterator<Item=T>` into an `Rc<[T]>` or `Arc<[T]>`(coming soon) without needing to make 2 heap allocations.
+A crate that let's you collect an `Iterator<Item=T>` into an `Rc<[T]>` or `Arc<[T]>` without needing to make 2 heap allocations.
 
 ## Important Note
 Please **DO NOT** use this if you already have a `Vec<T>`, `sString` or `&[T]` that contains the exact block memory you are trying convert to `Rc<[T]>`.
@@ -8,6 +8,8 @@ It wouldn't do anything better than the `std` implementation. It always better t
 
 For example
 ```rust
+use std::rc::Rc;
+
 let v = vec![1,2,3];
 let rc: Rc<[i32]> = v.into(); // Just use .into()
 ```
@@ -17,20 +19,23 @@ You just learned about how cool using `Rc<[T]>` can be and you have an `Iterator
 
 One could naively do it as:
 ```rust
-let iter = /*Some iterator*/;
-let rc: Rc<str>  = iter.collect::<String>>().into();
+use std::rc::Rc;
+
+let iter = "Hello, world!".chars();
+let rc: Rc<str>  = iter.collect::<String>().into();
 ```
 
 Which makes 2 seperate heap allocations, one for `String` and another one for `Rc`
 
 ## Solution
-It is very possible to do this with only 1 heap allocation, however it requires the usage of unsafe code, and good knowledge of the internal data structure of `Rc` called `RcBox`
+It is very possible to do this with only 1 heap allocation, however it requires the usage of unsafe code, and good knowledge of the internal data structure of the smart pointers
 
 With this crate you can avoid another heap allocation:
 ```rust
 use collect_into_rc_slice::*;
+use std::rc::Rc;
 
-let iter = /*Some iterator*/;
+let iter = "Hello, world!".chars(); // Some iterator
 let rc: Rc<str>  = iter.collect_into_rc_str();
 ```
 

@@ -1,37 +1,22 @@
-use crate::rc::{data_offset, padding_needed, RcBox};
+#![cfg(target_has_atomic = "ptr")]
+use crate::arc::{data_offset, padding_needed, ArcInner};
 use std::{
     alloc::{self, Layout},
-    mem, ptr,
-    rc::Rc,
-    slice,
+    mem, ptr, slice,
+    sync::{atomic::AtomicUsize, Arc},
 };
 
-pub trait CollectIntoRcStr {
-    /// Collects the iterator into an `Rc<str>`.
-    ///
-    /// ## Important Note
-    /// Please *DO NOT* use this if you already have a `String` or `&str` that contains the exact block memory you are trying convert to `Rc<[T]>`.
-    /// It wouldn't do anything better than the `std` implementation. It always better to use `.into()` in this case.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use std::rc::Rc;
-    /// use collect_into_rc_slice::*;
-    ///
-    /// let s: Rc<str> = "Hello, world!".chars().collect_into_rc_str();
-    ///
-    /// assert!(s.as_ref() == "Hello, world!");
-    /// ```
-    fn collect_into_rc_str(self) -> Rc<str>;
+pub trait CollectIntoArcStr {
+    fn collect_into_arc_str(self) -> Arc<str>;
 }
 
-impl<T> CollectIntoRcStr for T
+impl<T> CollectIntoArcStr for T
 where
     T: Iterator<Item = char>,
 {
-    fn collect_into_rc_str(self) -> Rc<str> {
+    fn collect_into_arc_str(self) -> Arc<str> {
         let metadata = data_offset::<u8>();
-        let align = mem::align_of::<RcBox<()>>();
+        let align = mem::align_of::<ArcInner<()>>();
 
         // the size should be at least metadata
         // but if bounds are known, it should be at least largest_known_bound+metadata
@@ -53,9 +38,9 @@ where
         // SAFETY: The metadata part is not meant to be valid UTF-8 data, so it's safe to
         // initialize it with arbitrary data.
         unsafe {
-            let init: *const u8 = &RcBox {
-                strong_count: 1,
-                weak_count: 1,
+            let init: *const u8 = &ArcInner {
+                strong: AtomicUsize::new(1),
+                weak: AtomicUsize::new(1),
                 data: (),
             } as *const _ as *const u8;
 
@@ -105,7 +90,7 @@ where
         // SAFETY:
         // - `data` is a valid pointer to a `str` located at the heap
         // - `data` is part of an RcBox with proper metadata.
-        unsafe { Rc::from_raw(data) }
+        unsafe { Arc::from_raw(data) }
     }
 }
 
@@ -114,33 +99,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_collect_into_rc_str() {
-        let s = "Hello, world!".chars().collect_into_rc_str();
+    fn test_collect_into_arc_str() {
+        let s = "Hello, world!".chars().collect_into_arc_str();
 
         assert!(s.as_ref() == "Hello, world!");
         assert_eq!(s.len(), 13);
-        assert_eq!(Rc::strong_count(&s), 1);
-        assert_eq!(Rc::weak_count(&s), 0);
+        assert_eq!(Arc::strong_count(&s), 1);
+        assert_eq!(Arc::weak_count(&s), 0);
     }
 
     #[test]
-    fn test_collect_into_rc_str_ref() {
-        let s = ['a', 'b', 'c'].iter().copied().collect_into_rc_str();
+    fn test_collect_into_arc_str_ref() {
+        let s = ['a', 'b', 'c'].iter().copied().collect_into_arc_str();
 
         assert!(s.as_ref() == "abc");
         assert_eq!(s.len(), 3);
-        assert_eq!(Rc::strong_count(&s), 1);
-        assert_eq!(Rc::weak_count(&s), 0);
+        assert_eq!(Arc::strong_count(&s), 1);
+        assert_eq!(Arc::weak_count(&s), 0);
     }
 
     #[test]
-    fn test_collect_into_rc_str_unknown_size() {
+    fn test_collect_into_arc_str_unknown_size() {
         let mut str = "Hello, world!".chars();
-        let s = std::iter::from_fn(move || str.next()).collect_into_rc_str();
+        let s = std::iter::from_fn(move || str.next()).collect_into_arc_str();
 
         assert!(s.as_ref() == "Hello, world!");
         assert_eq!(s.len(), 13);
-        assert_eq!(Rc::strong_count(&s), 1);
-        assert_eq!(Rc::weak_count(&s), 0);
+        assert_eq!(Arc::strong_count(&s), 1);
+        assert_eq!(Arc::weak_count(&s), 0);
     }
 }
