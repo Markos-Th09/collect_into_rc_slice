@@ -7,6 +7,21 @@ use std::{
 };
 
 pub trait CollectIntoArcStr {
+    /// Collects the iterator into an `Arc<str>`.
+    ///
+    /// ## Important Note
+    /// Please *DO NOT* use this if you already have a `String` or `&str` that contains the exact block memory you are trying convert to `Arc<[T]>`.
+    /// It wouldn't do anything better than the `std` implementation. It always better to use `.into()` in this case.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use std::sync::Arc;
+    /// use collect_into_rc_slice::*;
+    ///
+    /// let s: Arc<str> = "Hello, world!".chars().collect_into_arc_str();
+    ///
+    /// assert!(s.as_ref() == "Hello, world!");
+    /// ```
     fn collect_into_arc_str(self) -> Arc<str>;
 }
 

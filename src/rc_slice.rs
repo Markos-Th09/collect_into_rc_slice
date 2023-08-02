@@ -17,8 +17,8 @@ pub trait CollectIntoRcSlice<T> {
     /// use std::rc::Rc;
     /// use collect_into_rc_slice::*;
     ///
-    /// let a = [1, 2, 3, 4, 5];
-    /// let rc: Rc<[i32]> = a.into_iter().collect_into_rc_slice();
+    /// let arr = [1, 2, 3, 4, 5];
+    /// let rc: Rc<[i32]> = arr.into_iter().collect_into_rc_slice();
     ///
     /// assert_eq!(&*rc, &[1, 2, 3, 4, 5]);
     /// ```
