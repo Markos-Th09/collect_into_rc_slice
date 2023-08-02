@@ -12,6 +12,8 @@ jobs:
           toolchain: nightly
           components: miri, clippy
           override: true
+      - name: Cache build
+        uses: Swatinem/rust-cache@v2
       - name: Lint code
         run: cargo clippy
       - name: Run tests
